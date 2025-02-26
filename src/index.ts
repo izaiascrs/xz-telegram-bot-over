@@ -78,8 +78,8 @@ moneyManager.setOnTargetReached((profit, balance) => {
 
 const ticksMap = new Map<TSymbol, number[]>([]);
 
-// running everyday at 09:00 AM and 21:00 PM - America/Sao_Paulo
-const task = schedule('0 9,21 * * *', () => {
+// running every 2 hours - America/Sao_Paulo
+const task = schedule('0 */2 * * *', () => {
   telegramManager.sendMessage("⏳ Iniciando backtest...");
   getBackTestResults().then((loadedoptimizer) => {
     optimizerReady = true;
@@ -189,21 +189,26 @@ function handleTradeResult({
 async function getLastTradeResult(contractId: number | undefined) {
   if(!contractId) return;
 
-  const data = await apiManager.augmentedSend('proposal_open_contract', { contract_id: contractId })
-  const contract = data.proposal_open_contract;
-  const profit = contract?.profit ?? 0;
-  const stake = contract?.buy_price ?? 0;
-  const status = contract?.status;
-  const exit_tick_display_value = contract?.exit_tick_display_value;
-  const tick_stream = contract?.tick_stream;
+  try {
+    const data = await apiManager.augmentedSend('proposal_open_contract', { contract_id: contractId })
+    const contract = data.proposal_open_contract;
+    const profit = contract?.profit ?? 0;
+    const stake = contract?.buy_price ?? 0;
+    const status = contract?.status;
+    const exit_tick_display_value = contract?.exit_tick_display_value;
+    const tick_stream = contract?.tick_stream;
+  
+    handleTradeResult({
+      profit,
+      stake,
+      status: status ?? "open",
+      exit_tick_display_value,
+      tick_stream
+    });    
+  } catch (error) {
+    console.log("error trying to get last Trade!", error);
+  }
 
-  handleTradeResult({
-    profit,
-    stake,
-    status: status ?? "open",
-    exit_tick_display_value,
-    tick_stream
-  });
 }
 
 const checkStakeAndBalance = (stake: number) => {

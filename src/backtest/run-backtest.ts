@@ -143,8 +143,8 @@ const calculateTradesAfterWins = (trades: TradeSignal[]) => {
 const calculateDigitStats = (trades: TradeSignal[], digits: number[], config: { entryDigit: number }) => {
   const targetDigit = config.entryDigit;
   
-  // Pega os 500 trades mais recentes
-  const recentTrades = trades.slice(-500);
+  // Pega os 1000 trades mais recentes
+  const recentTrades = trades.slice(-1000);
   
   // Filtra trades onde o dígito de entrada é o configurado
   const targetTrades = recentTrades.filter(trade => 
