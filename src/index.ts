@@ -143,7 +143,6 @@ function handleTradeResult({
   const nextConfig = optimizer?.getNextConfig(lastTrade);
 
   if(nextConfig?.entryDigit !== undefined && nextConfig.ticks && !isWin) {
-    console.log("next trade config", nextConfig);    
     tradeConfig.entryDigit = nextConfig.entryDigit;
     tradeConfig.ticksCount = nextConfig.ticks;
   }
