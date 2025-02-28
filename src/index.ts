@@ -19,8 +19,8 @@ const CONTRACT_SECONDS = 2;
 
 const config: MoneyManagementV2 = {
   type: "fixed",
-  initialStake: 0.5,
-  profitPercent: 92,
+  initialStake: 1,
+  profitPercent: 137,
   maxStake: 100,
   maxLoss: 7,
   sorosLevel: 20,
@@ -30,8 +30,8 @@ const config: MoneyManagementV2 = {
 };
 
 const tradeConfig = {
-  entryDigit: 1,
-  ticksCount: 10, 
+  entryDigit: 0,
+  ticksCount: 1, 
 }
 
 let isAuthorized = false;
@@ -358,7 +358,7 @@ const subscribeToTicks = (symbol: TSymbol) => {
           duration_unit: "t",
           amount: Number(amount.toFixed(2)),
           contract_type: "DIGITOVER",
-          barrier: "4",
+          barrier: "5",
         },
       }).then((data) => {
         const contractId = data.buy?.contract_id;
