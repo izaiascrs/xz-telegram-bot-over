@@ -7,7 +7,7 @@ export async function getBackTestResults() {
   let optimizer: ConfigOptimizer | undefined;
   
   const digitStrategies = Array.from({ length: 10 }).map(
-    (_, i) => new ThreeAboveStrategy({ entryDigit: i, compareDigit: 5 })
+    (_, i) => new ThreeAboveStrategy({ entryDigit: i, compareDigit: 4 })
   );
 
   try {
@@ -24,7 +24,7 @@ export async function getBackTestResults() {
     const digitsTradesHistory = backTestResults.map(
       (backTest) => backTest.digitStats
     );
-    optimizer = new ConfigOptimizer(digitsTradesHistory, 6);
+    optimizer = new ConfigOptimizer(digitsTradesHistory, 5);
   } catch (error) {
     console.error("Erro ao executar backtest:", error);
   }
