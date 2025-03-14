@@ -257,6 +257,8 @@ const clearSubscriptions = async () => {
 const startBot = async () => {
   updateActivityTimestamp(); // Atualizar timestamp ao iniciar o bot
   await clearSubscriptions();
+  task.start();
+
 
   if (!isAuthorized) {
     await authorize();
@@ -281,6 +283,7 @@ const startBot = async () => {
 const stopBot = async () => {
   updateActivityTimestamp(); // Atualizar timestamp ao parar o bot
   await clearSubscriptions();
+  task.stop();
   telegramManager.sendMessage("🛑 Bot parado e desconectado dos serviços Deriv");
 };
 
@@ -339,6 +342,7 @@ const subscribeToTicks = (symbol: TSymbol) => {
       let amount = moneyManager.calculateNextStake();
 
       if (!checkStakeAndBalance(amount)) {
+        stopBot();
         return;
       }
 
@@ -479,8 +483,6 @@ function main() {
 }
 
 main();
-
-task.start();
 
 getBackTestResults().then((loadedoptimizer) => {
   optimizerReady = true;
