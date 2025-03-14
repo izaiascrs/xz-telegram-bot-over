@@ -186,9 +186,11 @@ function handleTradeResult({
 }
 
 async function getLastTradeResult(contractId: number | undefined) {
-  if(!contractId) return;
+  if(!contractId) return;  
 
   try {
+    if(!isAuthorized) await authorize();
+
     const data = await apiManager.augmentedSend('proposal_open_contract', { contract_id: contractId })
     const contract = data.proposal_open_contract;
     const profit = contract?.profit ?? 0;
@@ -284,6 +286,7 @@ const stopBot = async () => {
   updateActivityTimestamp(); // Atualizar timestamp ao parar o bot
   await clearSubscriptions();
   task.stop();
+  isTrading = false;
   telegramManager.sendMessage("🛑 Bot parado e desconectado dos serviços Deriv");
 };
 
