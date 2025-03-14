@@ -79,7 +79,7 @@ moneyManager.setOnTargetReached((profit, balance) => {
 const ticksMap = new Map<TSymbol, number[]>([]);
 
 // running every 2 hours - America/Sao_Paulo
-const task = schedule('0 */2 * * *', () => {
+const task = schedule('0 */4 * * *', () => {
   telegramManager.sendMessage("⏳ Iniciando backtest...");
   getBackTestResults().then((loadedoptimizer) => {
     optimizerReady = true;
