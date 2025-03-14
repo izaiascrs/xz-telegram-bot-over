@@ -18,15 +18,15 @@ const BALANCE_TO_START_TRADING = 100;
 const CONTRACT_SECONDS = 2;
 
 const config: MoneyManagementV2 = {
-  type: "fixed",
-  initialStake: 1,
+  type: "martingale",
+  initialStake: 0.35,
   profitPercent: 137,
   maxStake: 100,
   maxLoss: 7,
   sorosLevel: 20,
-  winsBeforeMartingale: 3,
+  winsBeforeMartingale: 0,
   initialBalance: BALANCE_TO_START_TRADING,
-  targetProfit: 200,
+  targetProfit: 100,
 };
 
 const tradeConfig = {
