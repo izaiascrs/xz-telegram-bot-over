@@ -7,7 +7,7 @@ export async function getBackTestResults() {
   let optimizer: ConfigOptimizer | undefined;
   
   const digitStrategies = Array.from({ length: 10 }).map(
-    (_, i) => new ThreeAboveStrategy({ entryDigit: i, compareDigit: 5 })
+    (_, i) => new ThreeAboveStrategy({ entryDigit: i, compareDigit: 6 })
   );
 
   try {
