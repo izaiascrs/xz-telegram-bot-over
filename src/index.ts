@@ -96,7 +96,7 @@ function createTradeTimeout() {
     if(lastContractId) {
       getLastTradeResult(lastContractId);
     }
-  }, ((tradeConfig.ticksCount * CONTRACT_SECONDS) * 1000) * 5);
+  }, ((tradeConfig.ticksCount * CONTRACT_SECONDS) * 1000) * 30);
 }
 
 function clearTradeTimeout() {
