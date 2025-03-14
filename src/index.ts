@@ -64,6 +64,7 @@ const telegramManager = new TelegramManager(tradeService);
 const moneyManager = new MoneyManager(config, config.initialBalance);
 let optimizer: ConfigOptimizer | undefined = undefined;
 let optimizerReady = false;
+let retryToGetLastTradeCount = 0;
 
 // Configura callback para quando atingir o lucro alvo
 moneyManager.setOnTargetReached((profit, balance) => {
@@ -187,10 +188,8 @@ function handleTradeResult({
 
 async function getLastTradeResult(contractId: number | undefined) {
   if(!contractId) return;  
-
+  if(retryToGetLastTradeCount >= 2) return;
   try {
-    if(!isAuthorized) await authorize();
-
     const data = await apiManager.augmentedSend('proposal_open_contract', { contract_id: contractId })
     const contract = data.proposal_open_contract;
     const profit = contract?.profit ?? 0;
@@ -198,6 +197,7 @@ async function getLastTradeResult(contractId: number | undefined) {
     const status = contract?.status;
     const exit_tick_display_value = contract?.exit_tick_display_value;
     const tick_stream = contract?.tick_stream;
+    retryToGetLastTradeCount = 0;
   
     handleTradeResult({
       profit,
@@ -206,8 +206,15 @@ async function getLastTradeResult(contractId: number | undefined) {
       exit_tick_display_value,
       tick_stream
     });    
-  } catch (error) {
+  } catch (error: any) {
     console.log("error trying to get last Trade!", error);
+    const codeError = error?.error?.code;
+    if(codeError && codeError === "AuthorizationRequired") {
+      retryToGetLastTradeCount++;
+      await authorize()
+        .then(() => getLastTradeResult(contractId))
+        .catch((err) => console.error("Error trying to login", err))
+    }
   }
 
 }
@@ -287,6 +294,7 @@ const stopBot = async () => {
   await clearSubscriptions();
   task.stop();
   isTrading = false;
+  retryToGetLastTradeCount = 0;
   telegramManager.sendMessage("🛑 Bot parado e desconectado dos serviços Deriv");
 };
 
