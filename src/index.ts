@@ -22,7 +22,7 @@ const config: MoneyManagementV2 = {
   initialStake: 0.35,
   profitPercent: 137,
   maxStake: 100,
-  maxLoss: 7,
+  maxLoss: 20,
   sorosLevel: 20,
   winsBeforeMartingale: 0,
   initialBalance: BALANCE_TO_START_TRADING,

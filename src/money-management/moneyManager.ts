@@ -14,6 +14,7 @@ export class MoneyManager {
   private maxWinsRequired: number;
   private isMartingaleTrade: boolean = false;
   private sessionProfit: number = 0;
+  private accumulatedLosses: number = 0;
   private onTargetReached?: (profit: number, balance: number) => void;
 
   constructor(private config: MoneyManagementV2, initialBalance: number) {
@@ -109,9 +110,10 @@ export class MoneyManager {
       type: success ? "win" : "loss",
     };
 
-    // Atualiza contadores
+     // Atualiza contadores
     if (success) {
       this.consecutiveLosses = 0;
+      this.accumulatedLosses = 0;
       if (
         this.recoveryMode &&
         this.consecutiveWins >= this.currentWinsRequired
@@ -124,6 +126,7 @@ export class MoneyManager {
       this.consecutiveLosses++;
       this.consecutiveWins = 0;
       this.sorosLevel = 0;
+      this.accumulatedLosses += this.lastTrade?.stake || 0;
     }
   }
 
@@ -146,11 +149,10 @@ export class MoneyManager {
   }
 
   private calculateMartingaleStake(): number {
+    
     if (this.lastTrade?.type === "win") {
-      this.consecutiveLosses = 0;
-      // Após win com martingale, próxima stake é lucro + entrada inicial
-      const profit = this.lastTrade.stake * (this.config.profitPercent / 100);
-      return this.config.initialStake + profit;
+      this.consecutiveLosses = 0;            
+      return this.config.initialStake;
     }
 
     if (this.config.maxLoss && this.consecutiveLosses >= this.config.maxLoss) {
@@ -159,10 +161,9 @@ export class MoneyManager {
       return this.config.initialStake;
     }
 
-    // Corrigido cálculo do martingale
-    const lastStake = this.lastTrade?.stake || this.config.initialStake;
+    // Corrigido cálculo do martingale    
     const profitRate = this.config.profitPercent / 100;
-    const nextStake = (lastStake + this.config.initialStake) / profitRate;
+    const nextStake = (this.accumulatedLosses + this.config.initialStake) / profitRate;
 
     return Math.min(
       nextStake,

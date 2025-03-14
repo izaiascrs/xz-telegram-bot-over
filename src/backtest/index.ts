@@ -18,7 +18,7 @@ export async function getBackTestResults() {
     })) as number[];
 
     const backTestResults = digitStrategies.map((strategy) =>
-      runBackTest(data, strategy, 100)
+      runBackTest(data, strategy, 1000)
     );
 
     const digitsTradesHistory = backTestResults.map(
