@@ -10,6 +10,7 @@ import { TelegramManager } from "./telegram";
 import apiManager from "./ws";
 import { DERIV_TOKEN } from "./utils/constants";
 import { ConfigOptimizer, LastTrade } from "./backtest/optmizer/config-optmizer";
+import { TradeStateManager } from "./utils/trade-state-manager";
 
 type TSymbol = (typeof symbols)[number];
 const symbols = ["R_10"] as const;
@@ -40,6 +41,7 @@ let waitingVirtualLoss = false;
 let consecutiveWins = 0;
 let lastContractId: number | undefined = undefined;
 let lastContractIntervalId: NodeJS.Timeout | null = null;
+let tickCount = 0;
 
 const lastTrade: LastTrade = {
   win: false,
@@ -62,6 +64,8 @@ const database = initDatabase();
 const tradeService = new TradeService(database);
 const telegramManager = new TelegramManager(tradeService);
 const moneyManager = new MoneyManager(config, config.initialBalance);
+const tradeStateManager = new TradeStateManager(3);
+
 let optimizer: ConfigOptimizer | undefined = undefined;
 let optimizerReady = false;
 let retryToGetLastTradeCount = 0;
@@ -184,6 +188,8 @@ function handleTradeResult({
   }).catch(err => console.error('Erro ao salvar trade:', err));
 
   clearTradeTimeout();
+
+  tradeStateManager.updateTradeResult(isWin);
 }
 
 async function getLastTradeResult(contractId: number | undefined) {
@@ -268,6 +274,11 @@ const startBot = async () => {
   await clearSubscriptions();
   task.start();
 
+  getBackTestResults()
+    .then((loadedOptimizer) => {
+      optimizerReady = true;
+      optimizer = loadedOptimizer;
+    });
 
   if (!isAuthorized) {
     await authorize();
@@ -346,40 +357,76 @@ const subscribeToTicks = (symbol: TSymbol) => {
 
     if (!isAuthorized || !telegramManager.isRunningBot()) return;
 
-    if(isTrading) return;
-    
-    if (lastTick === tradeConfig.entryDigit) {
-      updateActivityTimestamp(); // Atualizar timestamp ao identificar sinal
-      let amount = moneyManager.calculateNextStake();
+    if(isTrading) {
+      if(!tradeStateManager.canTrade()) {
+        tickCount++;
 
-      if (!checkStakeAndBalance(amount)) {
-        stopBot();
-        return;
+        if(tickCount >= tradeConfig.ticksCount) {
+          const isWin = lastTick > 5;
+          lastTrade.win = isWin;
+          lastTrade.entryDigit = tradeConfig.entryDigit;
+          lastTrade.ticks = tradeConfig.ticksCount;
+          lastTrade.resultDigit = lastTick;
+          lastTrade.digitsArray = currentDigits.slice(-2);
+
+          const nextConfig = optimizer?.getNextConfig(lastTrade);
+
+          if(nextConfig?.entryDigit !== undefined && nextConfig.ticks && !isWin) {
+            tradeConfig.entryDigit = nextConfig.entryDigit;
+            tradeConfig.ticksCount = nextConfig.ticks;
+          }
+
+          tradeStateManager.updateTradeResult(isWin);
+
+          isTrading = false;
+        }
       }
 
-      telegramManager.sendMessage(
-        `🎯 Sinal identificado!\n` +
-          `💰 Valor da entrada: $${amount.toFixed(2)}`
-      );
+      return;
+    }
+    
+    if (lastTick === tradeConfig.entryDigit) {
 
-      apiManager.augmentedSend("buy", {
-        buy: "1",
-        price: 100,
-        parameters: {
-          symbol,
-          currency: "USD",
-          basis: "stake",
-          duration: tradeConfig.ticksCount,
-          duration_unit: "t",
-          amount: Number(amount.toFixed(2)),
-          contract_type: "DIGITOVER",
-          barrier: "5",
-        },
-      }).then((data) => {
-        const contractId = data.buy?.contract_id;
-        lastContractId = contractId;
-        createTradeTimeout();
+      console.log("NEW TRADE", { 
+        canTrade: tradeStateManager.canTrade(),
+        virtualLoss: tradeStateManager.getCurrentLossCount(),
+        lossAverage: tradeStateManager.getLossAverage(),
       });
+      
+      updateActivityTimestamp(); // Atualizar timestamp ao identificar sinal
+
+      if(tradeStateManager.canTrade()) {
+        let amount = moneyManager.calculateNextStake();
+  
+        if (!checkStakeAndBalance(amount)) {
+          stopBot();
+          return;
+        }
+  
+        telegramManager.sendMessage(
+          `🎯 Sinal identificado!\n` +
+            `💰 Valor da entrada: $${amount.toFixed(2)}`
+        );
+  
+        apiManager.augmentedSend("buy", {
+          buy: "1",
+          price: 100,
+          parameters: {
+            symbol,
+            currency: "USD",
+            basis: "stake",
+            duration: tradeConfig.ticksCount,
+            duration_unit: "t",
+            amount: Number(amount.toFixed(2)),
+            contract_type: "DIGITOVER",
+            barrier: "5",
+          },
+        }).then((data) => {
+          const contractId = data.buy?.contract_id;
+          lastContractId = contractId;
+          createTradeTimeout();
+        });
+      }
 
       isTrading = true;
     }
@@ -494,8 +541,3 @@ function main() {
 }
 
 main();
-
-getBackTestResults().then((loadedoptimizer) => {
-  optimizerReady = true;
-  optimizer = loadedoptimizer;
-});
