@@ -19,7 +19,7 @@ const BALANCE_TO_START_TRADING = 100;
 const CONTRACT_SECONDS = 2;
 
 const config: MoneyManagementV2 = {
-  type: "martingale",
+  type: "fixed",
   initialStake: 0.35,
   profitPercent: 137,
   maxStake: 100,
@@ -100,7 +100,7 @@ function createTradeTimeout() {
     if(lastContractId) {
       getLastTradeResult(lastContractId);
     }
-  }, ((tradeConfig.ticksCount * CONTRACT_SECONDS) * 1000) * 5);
+  }, ((tradeConfig.ticksCount * CONTRACT_SECONDS) * 1000) * 30);
 }
 
 function clearTradeTimeout() {
