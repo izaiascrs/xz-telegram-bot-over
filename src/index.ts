@@ -19,7 +19,7 @@ const BALANCE_TO_START_TRADING = 100;
 const CONTRACT_SECONDS = 2;
 
 const config: MoneyManagementV2 = {
-  type: "martingale",
+  type: "fixed",
   initialStake: 0.35,
   profitPercent: 137,
   maxStake: 100,
@@ -64,7 +64,7 @@ const database = initDatabase();
 const tradeService = new TradeService(database);
 const telegramManager = new TelegramManager(tradeService);
 const moneyManager = new MoneyManager(config, config.initialBalance);
-const tradeStateManager = new TradeStateManager(4);
+const tradeStateManager = new TradeStateManager(2);
 
 let optimizer: ConfigOptimizer | undefined = undefined;
 let optimizerReady = false;
@@ -84,11 +84,11 @@ moneyManager.setOnTargetReached((profit, balance) => {
 const ticksMap = new Map<TSymbol, number[]>([]);
 
 // running every 2 hours - America/Sao_Paulo
-const task = schedule('0 */4 * * *', () => {
+const task = schedule('0 */2 * * *', () => {
   telegramManager.sendMessage("⏳ Iniciando backtest...");
-  getBackTestResults().then((loadedoptimizer) => {
+  getBackTestResults().then((loadedOptimizer) => {
     optimizerReady = true;
-    optimizer = loadedoptimizer;
+    optimizer = loadedOptimizer;
   });
 },  {
   scheduled: false,
@@ -386,12 +386,11 @@ const subscribeToTicks = (symbol: TSymbol) => {
     }
     
     if (lastTick === tradeConfig.entryDigit) {
-
-      console.log("NEW TRADE", { 
-        canTrade: tradeStateManager.canTrade(),
-        virtualLoss: tradeStateManager.getCurrentLossCount(),
-        lossAverage: tradeStateManager.getLossAverage(),
-      });
+      // console.log("NEW TRADE", { 
+      //   canTrade: tradeStateManager.canTrade(),
+      //   virtualLoss: tradeStateManager.getCurrentLossCount(),
+      //   lossAverage: tradeStateManager.getLossAverage(),
+      // });
       
       updateActivityTimestamp(); // Atualizar timestamp ao identificar sinal
 

@@ -2,8 +2,8 @@ class LosesStats {
   private losesArr: number[] = [];
   private lossAverage = 0;
   private currentConsecutiveLosses = 0;
-  private minLossAverage = 3;
-
+  private minLossAverage = 2;
+  private maxLossAverage = 5;
 
   constructor(initialLosesAverage?: number) {
     this.lossAverage = initialLosesAverage ?? 0;
@@ -24,7 +24,8 @@ class LosesStats {
   }
 
   public getLossAverage() {
-    return Math.max(this.lossAverage, this.minLossAverage);
+    const max =  Math.max(this.lossAverage, this.minLossAverage);
+    return max > this.maxLossAverage ? this.maxLossAverage : max;
   }
 
   public reset() {
@@ -65,7 +66,7 @@ class LossManager {
   private virtualLoss: VirtualLoss;
   private isInVirtualLoss: boolean = false;
   private canTrade: boolean = true; // Variável para monitorar se podemos fazer entradas
-  private hasWonAfterVirtualLoss: boolean = false; // Variável para verificar se ganhou após sair do loss virtual
+  private hasWonAfterVirtualLoss: boolean = true; // Variável para verificar se ganhou após sair do loss virtual
 
   constructor(initialLosesAverage: number) {
     this.losesStats = new LosesStats(initialLosesAverage);
@@ -143,9 +144,9 @@ export class TradeStateManager {
   }
 }
 
-// const tradeStateManager = new TradeStateManager(3);
 // Sequência de testes
-// const testResults = [true, false, false, false,true, false, false, false, true, false, false, false, false, false, false, false, true, false]; // Começa com uma entrada válida
+// const tradeStateManager = new TradeStateManager(3);
+// const testResults = [true, false, false, false, false,true, false, false, false, true, false, false, false, false, false, false, false, true, false]; // Começa com uma entrada válida
 // testResults.forEach((result, index) => {
 //   tradeStateManager.updateTradeResult(result);
 //   console.log(`Resultado da entrada ${index + 1}: ${result ? 'Ganho' : 'Perda'}`);
