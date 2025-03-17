@@ -19,7 +19,7 @@ const BALANCE_TO_START_TRADING = 100;
 const CONTRACT_SECONDS = 2;
 
 const config: MoneyManagementV2 = {
-  type: "fixed",
+  type: "martingale",
   initialStake: 0.35,
   profitPercent: 137,
   maxStake: 100,
@@ -64,7 +64,7 @@ const database = initDatabase();
 const tradeService = new TradeService(database);
 const telegramManager = new TelegramManager(tradeService);
 const moneyManager = new MoneyManager(config, config.initialBalance);
-const tradeStateManager = new TradeStateManager(3);
+const tradeStateManager = new TradeStateManager(4);
 
 let optimizer: ConfigOptimizer | undefined = undefined;
 let optimizerReady = false;
