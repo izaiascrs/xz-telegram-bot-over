@@ -130,6 +130,10 @@ export class MoneyManager {
     }
   }
 
+  updateProfitPercent(newProfitPercentage: number = 20) {
+    this.config.profitPercent = newProfitPercentage;
+  }
+
   private resetSession() {
     // Reseta para o saldo inicial
     this.currentBalance = this.initialBalance;

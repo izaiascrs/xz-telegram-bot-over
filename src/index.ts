@@ -21,7 +21,7 @@ const CONTRACT_SECONDS = 2;
 const config: MoneyManagementV2 = {
   type: "fixed",
   initialStake: 0.35,
-  profitPercent: 92,
+  profitPercent: 137,
   maxStake: 100,
   maxLoss: 20,
   sorosLevel: 20,
@@ -82,6 +82,7 @@ moneyManager.setOnTargetReached((profit, balance) => {
 });
 
 const ticksMap = new Map<TSymbol, number[]>([]);
+let contractType: "DIGITOVER" | "DIGITUNDER" = "DIGITOVER"
 
 // running every 2 hours - America/Sao_Paulo
 const task = schedule('0 */2 * * *', () => {
@@ -190,6 +191,21 @@ function handleTradeResult({
   clearTradeTimeout();
 
   tradeStateManager.updateTradeResult(isWin);
+
+  if(!isWin) {
+    const switchContractType = (digitsArr.at(-1) ?? 0) !== 5;
+
+    if(switchContractType) {
+      if(contractType === "DIGITOVER") {
+        contractType = "DIGITUNDER";
+        moneyManager.updateProfitPercent(92);
+      } else {
+        contractType = "DIGITOVER";
+        moneyManager.updateProfitPercent(137)
+      }      
+    }
+
+  }
 }
 
 async function getLastTradeResult(contractId: number | undefined) {
@@ -413,7 +429,7 @@ const subscribeToTicks = (symbol: TSymbol) => {
             duration: tradeConfig.ticksCount,
             duration_unit: "t",
             amount: Number(amount.toFixed(2)),
-            contract_type: "DIGITUNDER",
+            contract_type: contractType,
             barrier: "5",
           },
         }).then((data) => {
