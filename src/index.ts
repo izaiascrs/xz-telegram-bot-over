@@ -21,7 +21,7 @@ const CONTRACT_SECONDS = 2;
 const config: MoneyManagementV2 = {
   type: "fixed",
   initialStake: 0.35,
-  profitPercent: 137,
+  profitPercent: 92,
   maxStake: 100,
   maxLoss: 20,
   sorosLevel: 20,
@@ -357,44 +357,40 @@ const subscribeToTicks = (symbol: TSymbol) => {
 
     if (!isAuthorized || !telegramManager.isRunningBot()) return;
 
-    if(isTrading) {
-      if(!tradeStateManager.canTrade()) {
-        tickCount++;
+    if(isTrading) return;
 
-        if(tickCount >= tradeConfig.ticksCount) {
-          const isWin = lastTick > 5;
-          lastTrade.win = isWin;
-          lastTrade.entryDigit = tradeConfig.entryDigit;
-          lastTrade.ticks = tradeConfig.ticksCount;
-          lastTrade.resultDigit = lastTick;
-          lastTrade.digitsArray = currentDigits.slice(-2);
+    // if(isTrading) {
+    //   if(!tradeStateManager.canTrade()) {
+    //     tickCount++;
 
-          const nextConfig = optimizer?.getNextConfig(lastTrade);
+    //     if(tickCount >= tradeConfig.ticksCount) {
+    //       const isWin = lastTick > 5;
+    //       lastTrade.win = isWin;
+    //       lastTrade.entryDigit = tradeConfig.entryDigit;
+    //       lastTrade.ticks = tradeConfig.ticksCount;
+    //       lastTrade.resultDigit = lastTick;
+    //       lastTrade.digitsArray = currentDigits.slice(-2);
 
-          if(nextConfig?.entryDigit !== undefined && nextConfig.ticks && !isWin) {
-            tradeConfig.entryDigit = nextConfig.entryDigit;
-            tradeConfig.ticksCount = nextConfig.ticks;
-          }
+    //       const nextConfig = optimizer?.getNextConfig(lastTrade);
 
-          tradeStateManager.updateTradeResult(isWin);
+    //       if(nextConfig?.entryDigit !== undefined && nextConfig.ticks && !isWin) {
+    //         tradeConfig.entryDigit = nextConfig.entryDigit;
+    //         tradeConfig.ticksCount = nextConfig.ticks;
+    //       }
 
-          isTrading = false;
-        }
-      }
+    //       tradeStateManager.updateTradeResult(isWin);
 
-      return;
-    }
+    //       isTrading = false;
+    //     }
+    //   }
+
+    //   return;
+    // }
     
     if (lastTick === tradeConfig.entryDigit) {
-      // console.log("NEW TRADE", { 
-      //   canTrade: tradeStateManager.canTrade(),
-      //   virtualLoss: tradeStateManager.getCurrentLossCount(),
-      //   lossAverage: tradeStateManager.getLossAverage(),
-      // });
-      
       updateActivityTimestamp(); // Atualizar timestamp ao identificar sinal
 
-      if(tradeStateManager.canTrade()) {
+      // if(tradeStateManager.canTrade()) {
         let amount = moneyManager.calculateNextStake();
   
         if (!checkStakeAndBalance(amount)) {
@@ -417,7 +413,7 @@ const subscribeToTicks = (symbol: TSymbol) => {
             duration: tradeConfig.ticksCount,
             duration_unit: "t",
             amount: Number(amount.toFixed(2)),
-            contract_type: "DIGITOVER",
+            contract_type: "DIGITUNDER",
             barrier: "5",
           },
         }).then((data) => {
@@ -425,7 +421,7 @@ const subscribeToTicks = (symbol: TSymbol) => {
           lastContractId = contractId;
           createTradeTimeout();
         });
-      }
+      // }
 
       isTrading = true;
     }
