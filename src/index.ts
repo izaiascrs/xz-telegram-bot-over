@@ -19,7 +19,7 @@ const BALANCE_TO_START_TRADING = 100;
 const CONTRACT_SECONDS = 2;
 
 const config: MoneyManagementV2 = {
-  type: "fixed",
+  type: "martingale",
   initialStake: 0.35,
   profitPercent: 137,
   maxStake: 100,
@@ -37,11 +37,12 @@ const tradeConfig = {
 
 let isAuthorized = false;
 let isTrading = false;
-let waitingVirtualLoss = false;
 let consecutiveWins = 0;
 let lastContractId: number | undefined = undefined;
 let lastContractIntervalId: NodeJS.Timeout | null = null;
 let tickCount = 0;
+let waitingVirtualLoss = true;
+
 
 const lastTrade: LastTrade = {
   win: false,
@@ -159,7 +160,7 @@ function handleTradeResult({
 
   isTrading = false;
   lastContractId = undefined;
-  waitingVirtualLoss = false;
+  waitingVirtualLoss = !isWin;
   
   if (isWin) {
     newBalance = currentBalance + profit;
@@ -192,20 +193,20 @@ function handleTradeResult({
 
   tradeStateManager.updateTradeResult(isWin);
 
-  if(!isWin) {
-    const switchContractType = (digitsArr.at(-1) ?? 0) !== 5;
+  // if(!isWin) {
+  //   const switchContractType = (digitsArr.at(-1) ?? 0) !== 5;
 
-    if(switchContractType) {
-      if(contractType === "DIGITOVER") {
-        contractType = "DIGITUNDER";
-        moneyManager.updateProfitPercent(92);
-      } else {
-        contractType = "DIGITOVER";
-        moneyManager.updateProfitPercent(137)
-      }      
-    }
+  //   if(switchContractType) {
+  //     if(contractType === "DIGITOVER") {
+  //       contractType = "DIGITUNDER";
+  //       moneyManager.updateProfitPercent(92);
+  //     } else {
+  //       contractType = "DIGITOVER";
+  //       moneyManager.updateProfitPercent(137)
+  //     }      
+  //   }
 
-  }
+  // }
 }
 
 async function getLastTradeResult(contractId: number | undefined) {
@@ -228,6 +229,10 @@ async function getLastTradeResult(contractId: number | undefined) {
       exit_tick_display_value,
       tick_stream
     });    
+
+    isTrading = false;
+    waitingVirtualLoss = false;
+    tickCount = 0;
   } catch (error: any) {
     console.log("error trying to get last Trade!", error);
     const codeError = error?.error?.code;
@@ -338,6 +343,9 @@ const subscribeToTicks = (symbol: TSymbol) => {
     if (!telegramManager.isRunningBot()) {
       subscription.unsubscribe();
       const index = activeSubscriptions.indexOf(subscription);
+      isTrading = false;
+      waitingVirtualLoss = false;
+      tickCount = 0;
       if (index > -1) {
         activeSubscriptions.splice(index, 1);
       }
@@ -373,40 +381,42 @@ const subscribeToTicks = (symbol: TSymbol) => {
 
     if (!isAuthorized || !telegramManager.isRunningBot()) return;
 
-    if(isTrading) return;
+    if(isTrading) {
+      // if(!tradeStateManager.canTrade()) {
+      if(waitingVirtualLoss) {
+        tickCount++;
 
-    // if(isTrading) {
-    //   if(!tradeStateManager.canTrade()) {
-    //     tickCount++;
+        if(tickCount >= tradeConfig.ticksCount) {
+          const isWin = lastTick > 5;
+          lastTrade.win = isWin;
+          lastTrade.entryDigit = tradeConfig.entryDigit;
+          lastTrade.ticks = tradeConfig.ticksCount;
+          lastTrade.resultDigit = lastTick;
+          lastTrade.digitsArray = currentDigits.slice(-2);
 
-    //     if(tickCount >= tradeConfig.ticksCount) {
-    //       const isWin = lastTick > 5;
-    //       lastTrade.win = isWin;
-    //       lastTrade.entryDigit = tradeConfig.entryDigit;
-    //       lastTrade.ticks = tradeConfig.ticksCount;
-    //       lastTrade.resultDigit = lastTick;
-    //       lastTrade.digitsArray = currentDigits.slice(-2);
+          const nextConfig = optimizer?.getNextConfig(lastTrade);
 
-    //       const nextConfig = optimizer?.getNextConfig(lastTrade);
+          if(nextConfig?.entryDigit !== undefined && nextConfig.ticks && !isWin) {
+            tradeConfig.entryDigit = nextConfig.entryDigit;
+            tradeConfig.ticksCount = nextConfig.ticks;
+          }
 
-    //       if(nextConfig?.entryDigit !== undefined && nextConfig.ticks && !isWin) {
-    //         tradeConfig.entryDigit = nextConfig.entryDigit;
-    //         tradeConfig.ticksCount = nextConfig.ticks;
-    //       }
+          // tradeStateManager.updateTradeResult(isWin);
 
-    //       tradeStateManager.updateTradeResult(isWin);
+          if(isWin) waitingVirtualLoss = false;
+          isTrading = false;
+          tickCount = 0;
+        }
+      }
 
-    //       isTrading = false;
-    //     }
-    //   }
-
-    //   return;
-    // }
+      return;
+    }
     
     if (lastTick === tradeConfig.entryDigit) {
       updateActivityTimestamp(); // Atualizar timestamp ao identificar sinal
-
+      
       // if(tradeStateManager.canTrade()) {
+      if(!waitingVirtualLoss) {
         let amount = moneyManager.calculateNextStake();
   
         if (!checkStakeAndBalance(amount)) {
@@ -437,7 +447,7 @@ const subscribeToTicks = (symbol: TSymbol) => {
           lastContractId = contractId;
           createTradeTimeout();
         });
-      // }
+      }
 
       isTrading = true;
     }
