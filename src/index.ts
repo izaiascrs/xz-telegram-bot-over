@@ -20,7 +20,7 @@ const CONTRACT_SECONDS = 2;
 
 const config: MoneyManagementV2 = {
   type: "martingale",
-  initialStake: 1,
+  initialStake: 0.35,
   profitPercent: 137,
   maxStake: 100,
   maxLoss: 20,
@@ -149,10 +149,10 @@ function handleTradeResult({
 
   const nextConfig = optimizer?.getNextConfig(lastTrade);
 
-  // if(nextConfig?.entryDigit !== undefined && nextConfig.ticks && !isWin) {
-  //   tradeConfig.entryDigit = nextConfig.entryDigit;
-  //   tradeConfig.ticksCount = nextConfig.ticks;
-  // }
+  if(nextConfig?.entryDigit !== undefined && nextConfig.ticks && !isWin) {
+    tradeConfig.entryDigit = nextConfig.entryDigit;
+    tradeConfig.ticksCount = nextConfig.ticks;
+  }
   
   // Calcular novo saldo baseado no resultado
   const currentBalance = moneyManager.getCurrentBalance();
@@ -396,12 +396,12 @@ const subscribeToTicks = (symbol: TSymbol) => {
 
           const nextConfig = optimizer?.getNextConfig(lastTrade);
 
-          // if(nextConfig?.entryDigit !== undefined && nextConfig.ticks && !isWin) {
-          //   tradeConfig.entryDigit = nextConfig.entryDigit;
-          //   tradeConfig.ticksCount = nextConfig.ticks;
-          // }
+          if(nextConfig?.entryDigit !== undefined && nextConfig.ticks && !isWin) {
+            tradeConfig.entryDigit = nextConfig.entryDigit;
+            tradeConfig.ticksCount = nextConfig.ticks;
+          }
 
-          // tradeStateManager.updateTradeResult(isWin);
+          tradeStateManager.updateTradeResult(isWin);
 
           if(isWin) waitingVirtualLoss = false;
           isTrading = false;
