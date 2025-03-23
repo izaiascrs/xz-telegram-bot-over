@@ -149,10 +149,10 @@ function handleTradeResult({
 
   const nextConfig = optimizer?.getNextConfig(lastTrade);
 
-  if(nextConfig?.entryDigit !== undefined && nextConfig.ticks && !isWin) {
-    tradeConfig.entryDigit = nextConfig.entryDigit;
-    tradeConfig.ticksCount = nextConfig.ticks;
-  }
+  // if(nextConfig?.entryDigit !== undefined && nextConfig.ticks && !isWin) {
+  //   tradeConfig.entryDigit = nextConfig.entryDigit;
+  //   tradeConfig.ticksCount = nextConfig.ticks;
+  // }
   
   // Calcular novo saldo baseado no resultado
   const currentBalance = moneyManager.getCurrentBalance();
@@ -396,10 +396,10 @@ const subscribeToTicks = (symbol: TSymbol) => {
 
           const nextConfig = optimizer?.getNextConfig(lastTrade);
 
-          if(nextConfig?.entryDigit !== undefined && nextConfig.ticks && !isWin) {
-            tradeConfig.entryDigit = nextConfig.entryDigit;
-            tradeConfig.ticksCount = nextConfig.ticks;
-          }
+          // if(nextConfig?.entryDigit !== undefined && nextConfig.ticks && !isWin) {
+          //   tradeConfig.entryDigit = nextConfig.entryDigit;
+          //   tradeConfig.ticksCount = nextConfig.ticks;
+          // }
 
           // tradeStateManager.updateTradeResult(isWin);
 
@@ -414,7 +414,7 @@ const subscribeToTicks = (symbol: TSymbol) => {
     
     if (lastTick === tradeConfig.entryDigit) {
       updateActivityTimestamp(); // Atualizar timestamp ao identificar sinal
-      
+
       // if(tradeStateManager.canTrade()) {
       if(!waitingVirtualLoss) {
         let amount = moneyManager.calculateNextStake();
