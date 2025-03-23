@@ -20,7 +20,7 @@ const CONTRACT_SECONDS = 2;
 
 const config: MoneyManagementV2 = {
   type: "martingale",
-  initialStake: 0.35,
+  initialStake: 1,
   profitPercent: 137,
   maxStake: 100,
   maxLoss: 20,
