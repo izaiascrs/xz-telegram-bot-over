@@ -20,7 +20,7 @@ const CONTRACT_SECONDS = 2;
 
 const config: MoneyManagementV2 = {
   type: "fixed",
-  initialStake: 1,
+  initialStake: 0.35,
   profitPercent: 137,
   maxStake: 100,
   maxLoss: 20,
