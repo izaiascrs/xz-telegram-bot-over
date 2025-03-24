@@ -479,12 +479,16 @@ const subscribeToTicks = (symbol: TSymbol) => {
           const contractId = data.buy?.contract_id;
           lastContractId = contractId;
           createTradeTimeout();
+        }).catch(err => {
+          console.log("BUY CONTRACT ERROR", err);          
         });
       }
 
       isTrading = true;
     }
     
+  }, (err) => {
+    console.log("TICKS SUBSCRIPTION ERROR", err);
   });
 
   activeSubscriptions.push(subscription);
@@ -521,6 +525,8 @@ const subscribeToOpenOrders = () => {
       tick_stream
     });
 
+  },(err) => {
+    console.log("CONTRACT SUBSCRIPTION ERROR", err);    
   });
 
   activeSubscriptions.push(subscription);
