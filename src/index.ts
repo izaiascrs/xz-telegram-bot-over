@@ -10,7 +10,7 @@ import { TelegramManager } from "./telegram";
 import apiManager from "./ws";
 import { DERIV_TOKEN } from "./utils/constants";
 import { ConfigOptimizer, LastTrade } from "./backtest/optmizer/config-optmizer";
-import { TradeStateManager } from "./utils/trade-state-manager";
+import { TradeWinRateManger } from "./utils/trade-win-rate-manager";
 
 type TSymbol = (typeof symbols)[number];
 const symbols = ["R_10"] as const;
@@ -19,8 +19,8 @@ const BALANCE_TO_START_TRADING = 100;
 const CONTRACT_SECONDS = 2;
 
 const config: MoneyManagementV2 = {
-  type: "martingale",
-  initialStake: 0.35,
+  type: "fixed",
+  initialStake: 1,
   profitPercent: 137,
   maxStake: 100,
   maxLoss: 20,
@@ -41,7 +41,7 @@ let consecutiveWins = 0;
 let lastContractId: number | undefined = undefined;
 let lastContractIntervalId: NodeJS.Timeout | null = null;
 let tickCount = 0;
-let waitingVirtualLoss = true;
+let waitingVirtualLoss = false;
 
 
 const lastTrade: LastTrade = {
@@ -63,9 +63,12 @@ let activeSubscriptions: any[] = [];
 // Inicializar o banco de dados
 const database = initDatabase();
 const tradeService = new TradeService(database);
-const telegramManager = new TelegramManager(tradeService);
+const tradeWinRateManager = new TradeWinRateManger();
+const telegramManager = new TelegramManager(tradeService, tradeWinRateManager);
 const moneyManager = new MoneyManager(config, config.initialBalance);
-const tradeStateManager = new TradeStateManager(2);
+// const tradeStateManager = new TradeStateManager(2);
+
+
 
 let optimizer: ConfigOptimizer | undefined = undefined;
 let optimizerReady = false;
@@ -81,6 +84,29 @@ moneyManager.setOnTargetReached((profit, balance) => {
 
   telegramManager.sendMessage(message);
 });
+
+tradeWinRateManager.setOnTradeReach((tradeStats, type) => {
+  let message = '';
+
+  if (type === "virtual") {
+    message += 
+    `🎯 **Trade Virtual**: Taxa de Acerto Atingida!\n` +
+    `🎯 **Meta:** 42%\n` +
+    `💰 **WinRate:** ${tradeStats.winRate.toFixed(2)}%\n` +
+    `✨ **Entrando em modo de trade real!**`;
+  } else {
+      message += 
+      `🛑 **Trade Real**: Taxa de Acerto Abaixo do Necessário!\n` +
+      `🎯 **Meta:** 43%\n` +
+      `💰 **WinRate:** ${tradeStats.winRate.toFixed(2)}%\n` +
+      `✅ **Acertos:** $${tradeStats.win}\n` +
+      `❌ **Erros:** $${tradeStats.loss}\n` +
+      `🔵 **Total de Trades:** $${tradeStats.totalTrades}\n` +
+      `⚠️ **Entrando em modo de trade virtual!**`;
+  }
+
+  telegramManager.sendMessage(message);
+})
 
 const ticksMap = new Map<TSymbol, number[]>([]);
 let contractType: "DIGITOVER" | "DIGITUNDER" = "DIGITOVER"
@@ -98,11 +124,13 @@ const task = schedule('0 */2 * * *', () => {
 });
 
 function createTradeTimeout() {
+  clearTradeTimeout();
+
   lastContractIntervalId = setInterval(() => {
     if(lastContractId) {
       getLastTradeResult(lastContractId);
     }
-  }, ((tradeConfig.ticksCount * CONTRACT_SECONDS) * 1000) * 30);
+  }, ((tradeConfig.ticksCount * CONTRACT_SECONDS) * 1000) * 60);
 }
 
 function clearTradeTimeout() {
@@ -138,7 +166,8 @@ function handleTradeResult({
   const exitTickValue = exit_tick_display_value;
   const tickStream = tick_stream ?? [];
   const exitNumber = +((exitTickValue ?? '').slice(-1));
-  const digitsArr = tickStream.map((t) => +((t.tick_display_value?? "").slice(-1))).slice(-2);
+  const ticksArr = tickStream.map((t) => +((t.tick_display_value?? "").slice(-1)));
+  const digitsArr = tradeConfig.ticksCount > 1 ? ticksArr.slice(-2) : ticksArr.slice(-1);
 
   // update last Trade
   lastTrade.win = isWin;
@@ -160,7 +189,7 @@ function handleTradeResult({
 
   isTrading = false;
   lastContractId = undefined;
-  waitingVirtualLoss = !isWin;
+  // waitingVirtualLoss = !isWin;
   
   if (isWin) {
     newBalance = currentBalance + profit;
@@ -191,7 +220,9 @@ function handleTradeResult({
 
   clearTradeTimeout();
 
-  tradeStateManager.updateTradeResult(isWin);
+  // tradeStateManager.updateTradeResult(isWin);
+
+  tradeWinRateManager.updateTradeStats(isWin);
 
   // if(!isWin) {
   //   const switchContractType = (digitsArr.at(-1) ?? 0) !== 5;
@@ -231,7 +262,7 @@ async function getLastTradeResult(contractId: number | undefined) {
     });    
 
     isTrading = false;
-    waitingVirtualLoss = false;
+    // waitingVirtualLoss = false;
     tickCount = 0;
   } catch (error: any) {
     console.log("error trying to get last Trade!", error);
@@ -281,7 +312,7 @@ const clearSubscriptions = async () => {
 
     // Resetar todos os estados
     isTrading = false;
-    waitingVirtualLoss = false;
+    // waitingVirtualLoss = false;
     isAuthorized = false;
     ticksMap.clear();
     
@@ -296,7 +327,7 @@ const startBot = async () => {
   task.start();
 
   getBackTestResults()
-    .then((loadedOptimizer) => {
+    .then((loadedOptimizer) => {      
       optimizerReady = true;
       optimizer = loadedOptimizer;
     });
@@ -344,7 +375,7 @@ const subscribeToTicks = (symbol: TSymbol) => {
       subscription.unsubscribe();
       const index = activeSubscriptions.indexOf(subscription);
       isTrading = false;
-      waitingVirtualLoss = false;
+      // waitingVirtualLoss = false;
       tickCount = 0;
       if (index > -1) {
         activeSubscriptions.splice(index, 1);
@@ -383,16 +414,16 @@ const subscribeToTicks = (symbol: TSymbol) => {
 
     if(isTrading) {
       // if(!tradeStateManager.canTrade()) {
-      if(waitingVirtualLoss) {
+      if(!tradeWinRateManager.canTrade()) {
         tickCount++;
 
         if(tickCount >= tradeConfig.ticksCount) {
           const isWin = lastTick > 5;
           lastTrade.win = isWin;
+          lastTrade.digitsArray = tradeConfig.ticksCount > 1 ? currentDigits.slice(-2) : currentDigits.slice(-1);
           lastTrade.entryDigit = tradeConfig.entryDigit;
           lastTrade.ticks = tradeConfig.ticksCount;
           lastTrade.resultDigit = lastTick;
-          lastTrade.digitsArray = currentDigits.slice(-2);
 
           const nextConfig = optimizer?.getNextConfig(lastTrade);
 
@@ -401,9 +432,11 @@ const subscribeToTicks = (symbol: TSymbol) => {
             tradeConfig.ticksCount = nextConfig.ticks;
           }
 
-          tradeStateManager.updateTradeResult(isWin);
+          // tradeStateManager.updateTradeResult(isWin);
 
-          if(isWin) waitingVirtualLoss = false;
+          tradeWinRateManager.updateVirtualTradeStats(isWin);
+
+          // if(isWin) waitingVirtualLoss = false;
           isTrading = false;
           tickCount = 0;
         }
@@ -416,7 +449,7 @@ const subscribeToTicks = (symbol: TSymbol) => {
       updateActivityTimestamp(); // Atualizar timestamp ao identificar sinal
 
       // if(tradeStateManager.canTrade()) {
-      if(!waitingVirtualLoss) {
+      if(tradeWinRateManager.canTrade()) {
         let amount = moneyManager.calculateNextStake();
   
         if (!checkStakeAndBalance(amount)) {
@@ -515,7 +548,7 @@ setInterval(async () => {
     if (lastActivity > (60_000 * 2)) { // 2 minutos sem atividade
       console.log("Detectado possível travamento do bot, resetando estados...");
       isTrading = false;
-      waitingVirtualLoss = false;
+      // waitingVirtualLoss = false;
       lastActivityTimestamp = Date.now();
       await clearSubscriptions();
     }
