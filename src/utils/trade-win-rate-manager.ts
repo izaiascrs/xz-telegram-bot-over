@@ -15,7 +15,7 @@ export class TradeWinRateManger {
   private minVirtualTradeCount = 60;
   private minTradeCount = 100;
   private minVirtualTradeWinRate = 0.42; // 42%
-  private minTradeWinRate = 0.435; // 43.5%
+  private minTradeWinRate = 0.44; // 44%
   private virtualTradeStats: TradeStats = { trades: [], winRate: 0 };
   private tradeStats: TradeStats = { trades: [], winRate: 0 };
   private isAllowToTrade: boolean = false;
