@@ -67,9 +67,9 @@ export class TradeWinRateManger {
     
 
     // between 50 and 70 trades and win rate less then 45%
-    if(tradesCount > 50 && tradesCount < 70 && this.tradeStats.winRate < 0.42) {
-      this.isAllowToTrade = false;
-    }
+    //if(tradesCount > 50 && tradesCount < 70 && this.tradeStats.winRate < 0.42) {
+      //this.isAllowToTrade = false;
+    //}
 
     // 100 trades and win rate less then 48.5%
     if(tradesCount >= this.minTradeCount && this.tradeStats.winRate < this.minTradeWinRate) {
