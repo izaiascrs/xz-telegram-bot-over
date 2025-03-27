@@ -91,17 +91,17 @@ tradeWinRateManager.setOnTradeReach((tradeStats, type) => {
   if (type === "virtual") {
     message += 
     `🎯 **Trade Virtual**: Taxa de Acerto Atingida!\n` +
-    `🎯 **Meta:** 42%\n` +
+    `🎯 **Meta:** 40%\n` +
     `💰 **WinRate:** ${tradeStats.winRate.toFixed(2)}%\n` +
     `✨ **Entrando em modo de trade real!**`;
   } else {
       message += 
       `🛑 **Trade Real**: Taxa de Acerto Abaixo do Necessário!\n` +
-      `🎯 **Meta:** 43%\n` +
+      `🎯 **Meta:** 48.5%\n` +
       `💰 **WinRate:** ${tradeStats.winRate.toFixed(2)}%\n` +
-      `✅ **Acertos:** $${tradeStats.win}\n` +
-      `❌ **Erros:** $${tradeStats.loss}\n` +
-      `🔵 **Total de Trades:** $${tradeStats.totalTrades}\n` +
+      `✅ **Acertos:** ${tradeStats.win}\n` +
+      `❌ **Erros:** ${tradeStats.loss}\n` +
+      `🔵 **Total de Trades:** ${tradeStats.totalTrades}\n` +
       `⚠️ **Entrando em modo de trade virtual!**`;
   }
 
