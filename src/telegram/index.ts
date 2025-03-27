@@ -34,6 +34,8 @@ export class TelegramManager {
         );
       }
     });
+
+    this.bot.on("polling_error", (msg) => console.log("BOT PULLING ERROR",msg));
   }
 
   private setupCommands() {

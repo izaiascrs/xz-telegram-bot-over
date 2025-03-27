@@ -42,6 +42,7 @@ let lastContractId: number | undefined = undefined;
 let lastContractIntervalId: NodeJS.Timeout | null = null;
 let tickCount = 0;
 let waitingVirtualLoss = false;
+let pingIntervalId: NodeJS.Timeout | null = null;
 
 
 const lastTrade: LastTrade = {
@@ -262,6 +263,7 @@ async function getLastTradeResult(contractId: number | undefined) {
     });    
 
     isTrading = false;
+    lastContractId = undefined;
     // waitingVirtualLoss = false;
     tickCount = 0;
   } catch (error: any) {
@@ -546,6 +548,13 @@ const authorize = async () => {
   }
 };
 
+function ping() {
+  pingIntervalId = setInterval(() => {
+    apiManager.augmentedSend("ping")
+    .catch((err) => console.error("PING ERROR", err))
+  }, 30_000); // 30 seconds
+}
+
 // Adicionar verificação periódica do estado do bot
 setInterval(async () => {
   if (telegramManager.isRunningBot() && !isTrading && !waitingVirtualLoss && moneyManager.getCurrentBalance() > 0) {
@@ -570,9 +579,15 @@ const updateActivityTimestamp = () => {
 };
 
 function main() {
+  let intervalId;
+
+  if(intervalId) clearInterval(intervalId);
+  
   apiManager.connection.addEventListener("open", async () => {
+    if(pingIntervalId) clearTimeout(pingIntervalId);
     telegramManager.sendMessage("🌐 Conexão WebSocket estabelecida");
     authorize();
+    ping();
   });
 
   apiManager.connection.addEventListener("close", async () => {
@@ -588,7 +603,7 @@ function main() {
   });
 
   // Observadores do estado do bot do Telegram
-  setInterval(async () => {
+  intervalId = setInterval(async () => {
     if (telegramManager.isRunningBot() && !subscriptions.ticks) {
       await startBot();
     } else if (
