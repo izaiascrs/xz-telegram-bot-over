@@ -43,22 +43,22 @@ export class TradeWinRateManger {
       this.virtualTradeStats.trades
     );
 
-    const reachMinTrades = tradesCount >= this.minVirtualTradeCount;
-    const winRateLessThenMinWinRate = this.virtualTradeStats.winRate <= this.minVirtualTradeWinRate;
+    //const reachMinTrades = tradesCount >= this.minVirtualTradeCount;
+    //const winRateLessThenMinWinRate = this.virtualTradeStats.winRate <= this.minVirtualTradeWinRate;
 
     // check if win rate is less or equal to 38%
-    if(reachMinTrades && winRateLessThenMinWinRate) {
-      this.reachMinWinRate = true;
-    }
+    //if(reachMinTrades && winRateLessThenMinWinRate) {
+     // this.reachMinWinRate = true;
+   // }
 
     // check if reach min win rate and the current win rate is greater then 40%
-    if(this.reachMinWinRate && this.virtualTradeStats.winRate > this.winRateSignal) {
-      this.isAllowToTrade = true;
-    }
+   // if(this.reachMinWinRate && this.virtualTradeStats.winRate > this.winRateSignal) {
+   //   this.isAllowToTrade = true;
+   // }
 
-    // this.isAllowToTrade =
-    //   tradesCount >= this.minVirtualTradeCount &&
-    //   this.virtualTradeStats.winRate <= this.minVirtualTradeWinRate;
+     this.isAllowToTrade =
+       tradesCount >= this.minVirtualTradeCount &&
+       this.virtualTradeStats.winRate <= this.minVirtualTradeWinRate;
 
     if(this.isAllowToTrade && this.onTradeReach) {
       this.onTradeReach(this.getVirtualStats(), "virtual");
