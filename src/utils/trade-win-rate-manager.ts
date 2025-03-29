@@ -13,7 +13,7 @@ type TradeAllStats = {
 
 export class TradeWinRateManger {
   private minVirtualTradeCount = 10;
-  private minTradeCount = 20;
+  private minTradeCount = 10;
   private minVirtualTradeWinRate = 0.20; // 20%
   private winRateSignal = 0.40; // 40%
   private reachMinWinRate = false;
@@ -87,8 +87,12 @@ export class TradeWinRateManger {
     //   this.isAllowToTrade = false;
     // }
 
-    // 100 trades and win rate less then 48.5%
-    if(tradesCount >= this.minTradeCount && this.tradeStats.winRate < this.minTradeWinRate) {
+    // // 100 trades and win rate less then 48.5%
+    // if(tradesCount >= this.minTradeCount && this.tradeStats.winRate < this.minTradeWinRate) {
+    //   this.isAllowToTrade = false;
+    // }
+
+    if(tradesCount >= this.minTradeCount) {
       this.isAllowToTrade = false;
     }
 
