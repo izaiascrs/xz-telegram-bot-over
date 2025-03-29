@@ -14,7 +14,7 @@ type TradeAllStats = {
 export class TradeWinRateManger {
   private minVirtualTradeCount = 20;
   private minTradeCount = 15;
-  private minVirtualTradeWinRate = 0.15; // 15%
+  private minVirtualTradeWinRate = 0.35; // 15%
   private winRateSignal = 0.40; // 40%
   private reachMinWinRate = false;
   private minTradeWinRate = 0.50; // 50%
