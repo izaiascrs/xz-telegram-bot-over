@@ -14,7 +14,7 @@ type TradeAllStats = {
 export class TradeWinRateManger {
   private minVirtualTradeCount = 20;
   private minTradeCount = 15;
-  private minVirtualTradeWinRate = 0.35; // 15%
+  private minVirtualTradeWinRate = 0.60; // 15%
   private winRateSignal = 0.40; // 40%
   private reachMinWinRate = false;
   private minTradeWinRate = 0.50; // 50%
@@ -58,7 +58,7 @@ export class TradeWinRateManger {
 
      this.isAllowToTrade =
        tradesCount >= this.minVirtualTradeCount &&
-       this.virtualTradeStats.winRate <= this.minVirtualTradeWinRate;
+       this.virtualTradeStats.winRate >= this.minVirtualTradeWinRate;
 
     if(this.isAllowToTrade && this.onTradeReach) {
       this.onTradeReach(this.getVirtualStats(), "virtual");
